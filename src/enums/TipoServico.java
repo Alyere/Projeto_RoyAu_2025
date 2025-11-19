@@ -1,4 +1,4 @@
 package enums;
 
-public class TipoServico {
+public enum TipoServico {
 }

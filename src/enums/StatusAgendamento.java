@@ -1,4 +1,7 @@
 package enums;
 
-public class StatusAgendamento {
+public enum StatusAgendamento {
+    AGENDADO,
+    CONCLUIDO,
+    CANCELADO
 }
