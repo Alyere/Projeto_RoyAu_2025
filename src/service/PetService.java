@@ -22,9 +22,6 @@ public class PetService {
         return INSTANCIA;
     }
 
-    // -----------------------------------------------------
-    // Cadastrar Pet
-    // -----------------------------------------------------
     public void cadastrarPet(Pet pet) {
         if (pet == null || pet.getNome() == null || pet.getTutor() == null) {
             throw new RegraNegocioException("Dados do pet incompletos.");
@@ -32,9 +29,6 @@ public class PetService {
         petRepository.salvar(pet);
     }
 
-    // -----------------------------------------------------
-    // Buscar por ID
-    // -----------------------------------------------------
     public Pet buscarPorId(int id) {
         Pet pet = petRepository.buscarPorId(id);
         if (pet == null) {
@@ -43,17 +37,12 @@ public class PetService {
         return pet;
     }
 
-    // -----------------------------------------------------
-    // RF005 – Registrar histórico do pet
-    // -----------------------------------------------------
     public void registrarHistorico(Agendamento agendamento) {
         Pet pet = agendamento.getPet();
         pet.getHistorico().add(agendamento);
     }
 
-    // -----------------------------------------------------
-    // Listagem simples
-    // -----------------------------------------------------
+
     public void listarPets() {
         for (Pet p : petRepository.listar()) {
             System.out.println(p);

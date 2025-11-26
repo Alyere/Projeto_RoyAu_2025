@@ -61,17 +61,11 @@ public class AgendamentoService {
         agendamentoRepository.salvar(novo);
     }
 
-    // -------------------------------------------------------------
-    // RF004 – Verifica se horário está ocupado
-    // -------------------------------------------------------------
     private boolean existeChoqueDeHorario(LocalDateTime horarioNovo) {
         return agendamentoRepository.listar().stream()
                 .anyMatch(a -> a.getHorario().isEqual(horarioNovo));
     }
 
-    // -------------------------------------------------------------
-    // RF004 – Sugere próximo horário livre (incremento de 30 min)
-    // -------------------------------------------------------------
     public LocalDateTime sugerirProximoHorario(LocalDateTime horario) {
         LocalDateTime tentativa = horario.plusMinutes(30);
 
@@ -81,12 +75,6 @@ public class AgendamentoService {
         return tentativa;
     }
 
-    // -------------------------------------------------------------
-    // RF005 + RF002 – Finalizar serviço:
-    // 1. Muda status
-    // 2. Atualiza histórico do pet
-    // 3. Dá pontos ao tutor
-    // -------------------------------------------------------------
     public void finalizarAgendamento(int id) {
 
         Agendamento ag = agendamentoRepository.buscarPorId(id);
@@ -100,14 +88,12 @@ public class AgendamentoService {
                     "Agendamento não está no status AGENDADO.");
         }
 
-        // 1. Muda status
         ag.setStatus(StatusAgendamento.CONCLUIDO);
 
-        // 2. Atualiza histórico do pet
         Pet pet = ag.getPet();
         petService.registrarHistorico(ag);
 
-        // 3. Fidelidade
+
         Tutor tutor = pet.getTutor();
         int pontos = calcularPontosDoServico(ag.getServico());
         tutorService.adicionarPontos(tutor, pontos);
@@ -115,7 +101,7 @@ public class AgendamentoService {
         System.out.println("✔ Serviço concluído. Pontos adicionados: " + pontos);
     }
 
-    // Pontos padrão: você pode ajustar isso depois
+
     private int calcularPontosDoServico(Servico s) {
         if (s.getNome().equalsIgnoreCase("Banho")) return 10;
         if (s.getNome().equalsIgnoreCase("Tosa")) return 15;

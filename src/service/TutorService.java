@@ -21,9 +21,7 @@ public class TutorService {
         return INSTANCIA;
     }
 
-    // -----------------------------------------------------
-    // Cadastrar Tutor
-    // -----------------------------------------------------
+
     public void cadastrarTutor(Tutor tutor) {
         if (tutor == null || tutor.getNome() == null || tutor.getTelefone() == null) {
             throw new RegraNegocioException("Dados do tutor incompletos.");
@@ -31,9 +29,7 @@ public class TutorService {
         tutorRepository.salvar(tutor);
     }
 
-    // -----------------------------------------------------
-    // Buscar Tutor por ID
-    // -----------------------------------------------------
+
     public Tutor buscarPorId(int id) {
         Tutor t = tutorRepository.buscarPorId(id);
         if (t == null) {
@@ -42,17 +38,12 @@ public class TutorService {
         return t;
     }
 
-    // -----------------------------------------------------
-    // RF002 – Adicionar pontos de fidelidade
-    // -----------------------------------------------------
     public void adicionarPontos(Tutor tutor, int pontos) {
         if (tutor == null) throw new RegraNegocioException("Tutor inválido.");
         tutor.setPontos(tutor.getPontos() + pontos);
     }
 
-    // -----------------------------------------------------
-    // Listagem
-    // -----------------------------------------------------
+
     public void listarTutores() {
         for (Tutor t : tutorRepository.listar()) {
             System.out.println(t);
