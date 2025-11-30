@@ -25,5 +25,10 @@ public abstract class Servico {
         return precoBase;
     }
 
+    @Override
+    public String toString() {
+        return this.id + " - " + this.nome + " (R$ " + String.format("%.2f", this.precoBase) + ")";
+    }
+
     public abstract double calcularPreco(Pet pet);
 }

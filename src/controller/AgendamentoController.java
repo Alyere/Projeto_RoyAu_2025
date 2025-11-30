@@ -6,7 +6,6 @@ import exceptions.RegraNegocioException;
 
 public class AgendamentoController {
 
-    // O Controller USA o Service (Composição)
     private final AgendamentoService agendamentoService;
 
     public AgendamentoController() {
@@ -16,7 +15,6 @@ public class AgendamentoController {
 
 
     public void cadastrarAgendamento(Agendamento agendamento) throws RegraNegocioException {
-        // Chamada para a Camada de Serviço, que aplica a regra (Choque de Horário)
         agendamentoService.agendarServico(agendamento);
         System.out.println("Agendamento criado com sucesso...");
 

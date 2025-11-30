@@ -1,21 +1,29 @@
 package service;
 
-import model.Agendamento;
-import repository.AgendamentoRepository;
-import exceptions.RegraNegocioException;
 import enums.StatusAgendamento;
-import java.time.LocalDateTime;
+import exceptions.RegraNegocioException;
+import model.Agendamento;
+import model.Pet;
+import model.Servico;
+import model.Tutor;
+import repository.AgendamentoRepository;
 
+import java.time.LocalDateTime;
 
 public class AgendamentoService {
 
     private static AgendamentoService INSTANCIA;
 
-    private AgendamentoRepository agendamentoRepository;
+    private final AgendamentoRepository agendamentoRepository;
+    private final PetService petService;
+    private final TutorService tutorService;
+    private final ServicoService servicoService;
 
     private AgendamentoService() {
-
         this.agendamentoRepository = AgendamentoRepository.getInstancia();
+        this.petService = PetService.getInstancia();
+        this.tutorService = TutorService.getInstancia();
+        this.servicoService = ServicoService.getInstancia();
     }
 
     public static AgendamentoService getInstancia() {
@@ -25,60 +33,81 @@ public class AgendamentoService {
         return INSTANCIA;
     }
 
+    // -------------------------------------------------------------
+    // RF004 – Agenda Inteligente: Agendar serviço
+    // -------------------------------------------------------------
+    public void agendarServico(Agendamento novo) {
 
-    /** RF004: Agenda Inteligente  */
-    public void agendarServico(Agendamento novoAgendamento) {
-
-        // 1. Validação de Composição e Horário
-        if (novoAgendamento == null || novoAgendamento.getHorario() == null || novoAgendamento.getPet() == null || novoAgendamento.getServico() == null) {
-            throw new RegraNegocioException("Dados do agendamento (horário, pet ou serviço) incompletos.");
+        if (novo == null ||
+                novo.getHorario() == null ||
+                novo.getPet() == null ||
+                novo.getServico() == null) {
+            throw new RegraNegocioException("Dados do agendamento incompletos.");
         }
 
-        // 2. Regra de Negócio:
-        if (existeChoqueDeHorario(novoAgendamento)) {
-
-            throw new RegraNegocioException("Conflito de horário detectado para " + novoAgendamento.getHorario() + ". Sugira outro horário.");
+        // Valida horário
+        if (existeChoqueDeHorario(novo.getHorario())) {
+            LocalDateTime sugestao = sugerirProximoHorario(novo.getHorario());
+            throw new RegraNegocioException(
+                    "Horário indisponível. Horário sugerido: " + sugestao);
         }
 
-        // 3. Salva no Repositório
-        agendamentoRepository.salvar(novoAgendamento);
+        // Ajuste: recalcular preço usando o serviço
+        Servico servico = novo.getServico();
+        double precoFinal = servico.calcularPreco(novo.getPet());
+        novo.setPrecoFinal(precoFinal);
+
+        novo.setStatus(StatusAgendamento.AGENDADO);
+        agendamentoRepository.salvar(novo);
     }
 
-    /** Lógica de verificação de horário usando LocalDateTime. */
-    private boolean existeChoqueDeHorario(Agendamento novoAgendamento) {
-        // Usa o tipo correto para comparação (LocalDateTime)
-        LocalDateTime horarioNovo = novoAgendamento.getHorario();
-
-        for (Agendamento existente : agendamentoRepository.listar()) {
-
-            if (existente.getHorario().isEqual(horarioNovo)) {
-                return true;
-            }
-        }
-        return false;
+    private boolean existeChoqueDeHorario(LocalDateTime horarioNovo) {
+        return agendamentoRepository.listar().stream()
+                .anyMatch(a -> a.getHorario().isEqual(horarioNovo));
     }
 
-    /** RF005: Finaliza o agendamento e muda o status. */
-    public void finalizarAgendamento(int idAgendamento) throws RegraNegocioException {
-        Agendamento ag = agendamentoRepository.buscarPorId(idAgendamento);
+    public LocalDateTime sugerirProximoHorario(LocalDateTime horario) {
+        LocalDateTime tentativa = horario.plusMinutes(30);
+
+        while (existeChoqueDeHorario(tentativa)) {
+            tentativa = tentativa.plusMinutes(30);
+        }
+        return tentativa;
+    }
+
+    public void finalizarAgendamento(int id) {
+
+        Agendamento ag = agendamentoRepository.buscarPorId(id);
 
         if (ag == null) {
             throw new RegraNegocioException("Agendamento não encontrado.");
         }
 
-        // Verifica se está no status AGENDADO antes de CONCLUIR
-        if (ag.getStatus() == StatusAgendamento.AGENDADO) {
-            ag.setStatus(StatusAgendamento.CONCLUIDO);
-
-            // RF002: A lógica de Sistema de Fidelidade seria inserida aqui.
-
-            System.out.println("✅ Agendamento ID " + idAgendamento + " finalizado e status alterado.");
-        } else {
-            throw new RegraNegocioException("Agendamento ID " + idAgendamento + " não está no status AGENDADO.");
+        if (ag.getStatus() != StatusAgendamento.AGENDADO) {
+            throw new RegraNegocioException(
+                    "Agendamento não está no status AGENDADO.");
         }
+
+        ag.setStatus(StatusAgendamento.CONCLUIDO);
+
+        Pet pet = ag.getPet();
+        petService.registrarHistorico(ag);
+
+
+        Tutor tutor = pet.getTutor();
+        int pontos = calcularPontosDoServico(ag.getServico());
+        tutorService.adicionarPontos(tutor, pontos);
+
+        System.out.println("✔ Serviço concluído. Pontos adicionados: " + pontos);
     }
 
-    // Método auxiliar para o Controller acessar a lista (CRUD)
+
+    private int calcularPontosDoServico(Servico s) {
+        if (s.getNome().equalsIgnoreCase("Banho")) return 10;
+        if (s.getNome().equalsIgnoreCase("Tosa")) return 15;
+        return 5;
+    }
+
     public AgendamentoRepository getRepository() {
         return agendamentoRepository;
     }
